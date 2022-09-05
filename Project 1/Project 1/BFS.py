@@ -1,3 +1,4 @@
+import queue
 import sys
 
 # Helper functions to aid in your implementation. Can edit/remove
@@ -133,6 +134,7 @@ def to_chess_coord(grid_pos):
 
 def from_chess_coord_2(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
+
 class Board:
     def __init__(self, rows_no, columns_no, grid, enemy_pieces, own_pieces, goals): 
         self.board = [] * rows_no
@@ -168,21 +170,69 @@ class Board:
 ######## State
 #############################################################################
 class State:
-    def __init__(self, frontier):
-        # replace `pass` with the desired attributes and add any
-        # additional parameters to the function
-        pass
-
+    def __init__(self, board):
+        self.board = board
+        
+        # construct search space
+        
+    
     def move(self):
         pass
+         
 
 #############################################################################
 ######## Implement Search Algorithm
 #############################################################################
+def goal_test(goal_lst, curr_pos):
+    for i in range(len(goal_lst)):
+        if curr_pos == goal_lst[i]:
+            return (True, goal_lst[i])
+    return (False, None)
+
 def search(rows, cols, grid, enemy_pieces, own_pieces, goals):
     board = Board(rows, cols, grid, enemy_pieces, own_pieces, goals)
-
-
+    # state = State(board)
+    # for each movement of the king, 
+    # find possible move, then
+    # add them all to the frontier. 
+    # pop the stack. 
+    # add to path 
+    frontier = queue.Queue()
+    path = []
+    path_found = False
+    first_goal_found = None
+    parent = dict()
+    # WHY IS FRONTIER NOT EMPTY???????
+    # for i in range(len(own_pieces)):
+    for i in range(len(own_pieces)):
+        piece = Piece(own_pieces[i][0], own_pieces[i][1])
+        frontier.put(piece.from_pos)
+        parent[piece.from_pos] = None
+        while not frontier.empty():
+            curr_pos = frontier.get()
+            if goal_test(goals, curr_pos)[0]:
+                path_found = True
+                first_goal_found = goal_test(goals, curr_pos)[1]
+            
+            piece = Piece(own_pieces[i][0], curr_pos)
+            possible_moves = piece.get_valid_moves(board.grid)
+            possible_moves = flatten(possible_moves)
+        
+            # add neighbour to frontier
+            for j in range(len(possible_moves)):
+                neighbour = from_chess_coord_2(possible_moves[j])
+                if (neighbour != curr_pos):
+                    parent[neighbour] = curr_pos
+                    frontier.put(neighbour)
+    
+    # backtrack
+    if path_found:
+        path.append(first_goal_found)
+        while parent[first_goal_found] is not None:
+            path.append(parent[first_goal_found])
+            first_goal_found = parent[first_goal_found]
+        path.reverse()
+    return path
 #############################################################################
 ######## Parser function and helper functions
 #############################################################################
