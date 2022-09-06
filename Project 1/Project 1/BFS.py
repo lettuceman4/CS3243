@@ -1,4 +1,4 @@
-import queue
+from queue import Queue
 import sys
 
 # Helper functions to aid in your implementation. Can edit/remove
@@ -112,7 +112,6 @@ class Piece:
             moves_knight = get_knight_moves(grid, self.from_pos)
             moves_diagonal.append(moves_knight)
             return moves_diagonal
-
         elif (self.name == "Empress"):
             moves_straight = get_straight_moves(grid, self.from_pos, False)
             moves_knight = get_knight_moves(grid, self.from_pos)
@@ -132,7 +131,7 @@ def flatten(S):
 def to_chess_coord(grid_pos):
     return (chr(grid_pos[1] + 97), grid_pos[0])
 
-def from_chess_coord_2(chess_pos):
+def to_grid_coord(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
 
 class Board:
@@ -162,22 +161,21 @@ class Board:
         for i in range (len(possible_enemy_moves)):
             curr_square = possible_enemy_moves[i]
             blocked_square.add(curr_square)
-            (r, c) = from_chess_coord_2(curr_square)
+            (r, c) = to_grid_coord(curr_square)
             grid[r][c] = -2
 
-        print(blocked_square)
 #############################################################################
 ######## State
 #############################################################################
-class State:
-    def __init__(self, board):
-        self.board = board
+# class State:
+#     def __init__(self, board):
+#         self.board = board
         
-        # construct search space
+#         # construct search space
         
     
-    def move(self):
-        pass
+#     def move(self):
+#         pass
          
 
 #############################################################################
@@ -197,41 +195,51 @@ def search(rows, cols, grid, enemy_pieces, own_pieces, goals):
     # add them all to the frontier. 
     # pop the stack. 
     # add to path 
-    frontier = queue.Queue()
+    frontier = Queue()
     path = []
     path_found = False
     first_goal_found = None
     parent = dict()
-    # WHY IS FRONTIER NOT EMPTY???????
+    visited = set()
+
     # for i in range(len(own_pieces)):
     for i in range(len(own_pieces)):
         piece = Piece(own_pieces[i][0], own_pieces[i][1])
         frontier.put(piece.from_pos)
         parent[piece.from_pos] = None
         while not frontier.empty():
+            print(frontier.qsize())
             curr_pos = frontier.get()
+            visited.add(curr_pos)
+
             if goal_test(goals, curr_pos)[0]:
                 path_found = True
                 first_goal_found = goal_test(goals, curr_pos)[1]
-            
+                break
+
             piece = Piece(own_pieces[i][0], curr_pos)
             possible_moves = piece.get_valid_moves(board.grid)
             possible_moves = flatten(possible_moves)
-        
             # add neighbour to frontier
             for j in range(len(possible_moves)):
-                neighbour = from_chess_coord_2(possible_moves[j])
-                if (neighbour != curr_pos):
+                neighbour = to_grid_coord(possible_moves[j])
+                if (neighbour != curr_pos and neighbour not in visited):
                     parent[neighbour] = curr_pos
                     frontier.put(neighbour)
-    
     # backtrack
     if path_found:
-        path.append(first_goal_found)
+        # path.append(first_goal_found)
         while parent[first_goal_found] is not None:
-            path.append(parent[first_goal_found])
+            first_goal_found_chess_coord = to_chess_coord(first_goal_found)
+            move_pair = [first_goal_found_chess_coord]
+            next_step = parent[first_goal_found]
+            next_step_chess_coord = to_chess_coord(next_step)
+            move_pair.append(next_step_chess_coord)
+            move_pair.reverse()
+            path.append(move_pair)
             first_goal_found = parent[first_goal_found]
         path.reverse()
+    # print(path)
     return path
 #############################################################################
 ######## Parser function and helper functions
@@ -299,6 +307,7 @@ def run_BFS():
     testcase = sys.argv[1]
     rows, cols, grid, enemy_pieces, own_pieces, goals = parse(testcase)
     moves = search(rows, cols, grid, enemy_pieces, own_pieces, goals)
+    print(moves)
     return moves
 
 def main():
