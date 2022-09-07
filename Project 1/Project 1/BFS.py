@@ -79,6 +79,7 @@ def get_moves(grid, step_x, step_y, curr_pos, is_limited_range):
             curr_pos = next_pos
             if (is_limited_range):            
                 break
+    # print ("step: ({}, {}): {}".format(step_x, step_y, moves))
     return moves 
 
     
@@ -208,7 +209,6 @@ def search(rows, cols, grid, enemy_pieces, own_pieces, goals):
         frontier.put(piece.from_pos)
         parent[piece.from_pos] = None
         while not frontier.empty():
-            print(frontier.qsize())
             curr_pos = frontier.get()
             visited.add(curr_pos)
 
@@ -220,10 +220,14 @@ def search(rows, cols, grid, enemy_pieces, own_pieces, goals):
             piece = Piece(own_pieces[i][0], curr_pos)
             possible_moves = piece.get_valid_moves(board.grid)
             possible_moves = flatten(possible_moves)
+            possible_moves = list(dict.fromkeys(possible_moves))
+            
+            # print (possible_moves)
             # add neighbour to frontier
             for j in range(len(possible_moves)):
                 neighbour = to_grid_coord(possible_moves[j])
                 if (neighbour != curr_pos and neighbour not in visited):
+                    visited.add(neighbour)
                     parent[neighbour] = curr_pos
                     frontier.put(neighbour)
     # backtrack
@@ -307,7 +311,6 @@ def run_BFS():
     testcase = sys.argv[1]
     rows, cols, grid, enemy_pieces, own_pieces, goals = parse(testcase)
     moves = search(rows, cols, grid, enemy_pieces, own_pieces, goals)
-    print(moves)
     return moves
 
 def main():
