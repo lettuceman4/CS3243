@@ -243,8 +243,8 @@ def search(rows, cols, grid, enemy_pieces, own_pieces, goals):
             path.append(move_pair)
             first_goal_found = parent[first_goal_found]
         path.reverse()
-    # print(path)
     return path
+    
 #############################################################################
 ######## Parser function and helper functions
 #############################################################################
