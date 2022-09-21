@@ -10,6 +10,11 @@ def get_manhattan_dist(from_pos, to_pos):
     y = to_pos[1] - from_pos[1]
     return (x, y)
 
+def heuristic(king_grid_pos, goal_grid_pos):
+    dx = abs(king_grid_pos[0] - goal_grid_pos[0])
+    dy = abs(king_grid_pos[1] - goal_grid_pos[1])
+    return 
+
 def get_knight_moves(grid, from_pos):
     possible_moves = []
     curr_pos_chess_coord = to_chess_coord(from_pos)
