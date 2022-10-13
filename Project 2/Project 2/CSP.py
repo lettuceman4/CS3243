@@ -136,25 +136,23 @@ def to_grid_coord(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
 
 class Board:
-    def __init__(self, rows_no, columns_no, grid, enemy_pieces, own_pieces, goals): 
+    def __init__(self, rows_no, columns_no, grid, pieces): 
         self.board = [] * rows_no
         for i in range(columns_no):
             self.board.append([None] * columns_no)
         
-        self.enemy_pieces = enemy_pieces
+        self.pieces = pieces
         self.grid = grid
-        self.own_pieces = own_pieces
-        self.goal = goals
 
         # add enemies possible move
-        enemy_list = []
+        piece_list = []
         
-        for i in range(len(enemy_pieces)):
-            enemy_list.append(Piece(enemy_pieces[i][0], enemy_pieces[i][1]))
+        for i in range(len(pieces)):
+            piece_list.append(Piece(pieces[i][0], pieces[i][1]))
 
         possible_enemy_moves = []
-        for i in range(len(enemy_list)):
-            new_list = enemy_list[i].get_valid_moves(self.grid)
+        for i in range(len(piece_list)):
+            new_list = piece_list[i].get_valid_moves(self.grid)
             possible_enemy_moves.append(new_list)
     
         possible_enemy_moves = flatten(possible_enemy_moves)
