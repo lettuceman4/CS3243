@@ -1,3 +1,4 @@
+from random import randint
 import sys
 
 def get_manhattan_dist(from_pos, to_pos):
@@ -159,12 +160,11 @@ class State:
     # get the total heuristic of the state - number of pairs threatening each other
     def get_heuristic_of_state(self):
         heuristic = 0
-        for (piece) in self.dict.values():
+        for (pos, piece) in self.dict.items():
             valid_moves = piece.get_valid_moves(self.board.grid)
             for move in valid_moves:
-                if move in self.dict.keys():
+                if move in self.dict.keys() and move != pos:
                     heuristic += 1
-
         return heuristic / 2
 
 
@@ -179,7 +179,6 @@ def generate_next_states(currState: State):
         dict_copy = currState.dict.copy()
         del dict_copy[key]
     
-        # 1 dict finish populating, generate state
         state = State(dict_copy, currState.board)
         return_state_list.append(state)
     return return_state_list
@@ -223,16 +222,25 @@ def search(rows, cols, grid, pieces, k):
         dict[piece.from_pos] = piece
     
     initial_state = State(dict, board)
-    curr_state = initial_state
-    num_removed = n - int(k)
-    while (num_removed > 0):
-        curr_state, min_H = get_next_best_state(curr_state)
-        
-        # there is no pair threatening each other left
-        if (min_H == 0):
-            return create_return_state_list(curr_state)
-        num_removed -= 1
+    starting_states = generate_next_states(initial_state)
+    # max value possible of global min is n
+    global_min = n
+    while global_min != 0:
+        num_removed = n - int(k)
         # random restart when no solution is found
+        starting_index = randint(0, n - 1)
+        curr_state = starting_states[starting_index]
+        while (num_removed > 0):
+            curr_state, min_H = get_next_best_state(curr_state)
+            if (global_min > min_H):
+                global_min = min_H
+            # print(global_min)
+            # there is no pair threatening each other left
+            if (min_H == 0):
+                # print("YAY")
+                return create_return_state_list(curr_state)
+            num_removed -= 1
+            
     return create_return_state_list(curr_state)
 
 
@@ -292,7 +300,7 @@ def run_local():
     testcase = sys.argv[1] #Do not remove. This is your input testfile.
     rows, cols, grid, pieces, k = parse(testcase)
     goalstate = search(rows, cols, grid, pieces, k)
-    print(goalstate)
+    # print(goalstate)
     return goalstate #Format to be returned
 
 def main():
