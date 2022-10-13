@@ -231,7 +231,7 @@ def search(rows, cols, grid, pieces, k):
         # there is no pair threatening each other left
         if (min_H == 0):
             return create_return_state_list(curr_state)
-
+        num_removed -= 1
         # random restart when no solution is found
     return create_return_state_list(curr_state)
 
@@ -292,7 +292,7 @@ def run_local():
     testcase = sys.argv[1] #Do not remove. This is your input testfile.
     rows, cols, grid, pieces, k = parse(testcase)
     goalstate = search(rows, cols, grid, pieces, k)
-    # print(goalstate)
+    print(goalstate)
     return goalstate #Format to be returned
 
 def main():
