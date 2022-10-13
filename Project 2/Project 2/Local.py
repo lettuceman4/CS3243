@@ -237,7 +237,7 @@ def search(rows, cols, grid, pieces, k):
             # print(global_min)
             # there is no pair threatening each other left
             if (min_H == 0):
-                # print("YAY")
+                # print("YAY")  
                 return create_return_state_list(curr_state)
             num_removed -= 1
             
