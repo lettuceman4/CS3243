@@ -143,7 +143,6 @@ class Board:
         # pieces is a dict of <(r, c): name>
         for (pos, name) in pieces.items():
             pieces_obj.append(Piece(name, pos))
-
         self.pieces_obj = pieces_obj
 
 class State:

@@ -1,10 +1,6 @@
-from queue import Queue
+from random import randint
 import sys
 
-# Helper functions to aid in your implementation. Can edit/remove
-#############################################################################
-######## Piece
-#############################################################################
 def get_manhattan_dist(from_pos, to_pos):
     x = ord(to_pos[0] - from_pos[0])
     y = to_pos[1] - from_pos[1]
@@ -12,8 +8,8 @@ def get_manhattan_dist(from_pos, to_pos):
 
 def get_knight_moves(grid, from_pos):
     possible_moves = []
-    curr_pos_chess_coord = to_chess_coord(from_pos)
-    possible_moves.append(curr_pos_chess_coord)
+    # curr_pos_chess_coord = to_chess_coord(from_pos)
+    possible_moves.append(from_pos)
     moves1 = get_moves(grid, -2, 1, from_pos, True)
     moves2 = get_moves(grid, -2, -1, from_pos, True)
     moves3 = get_moves(grid, 2, -1, from_pos, True)
@@ -34,8 +30,8 @@ def get_knight_moves(grid, from_pos):
 
 def get_straight_moves(grid, curr_pos, is_limited_range):
     possible_moves = []
-    curr_pos_chess_coord = to_chess_coord(curr_pos)
-    possible_moves.append(curr_pos_chess_coord)
+    # curr_pos_chess_coord = to_chess_coord(curr_pos)
+    possible_moves.append(curr_pos)
     moves_left = get_moves(grid, -1, 0, curr_pos, is_limited_range)
     moves_right = get_moves(grid, 1, 0, curr_pos, is_limited_range)
     moves_up = get_moves(grid, 0, -1, curr_pos, is_limited_range)
@@ -48,8 +44,8 @@ def get_straight_moves(grid, curr_pos, is_limited_range):
 
 def get_diagonal_moves(grid, from_pos, is_limited_range):
     possible_moves = []
-    curr_pos_chess_coord = to_chess_coord(from_pos)
-    possible_moves.append(curr_pos_chess_coord)
+    # curr_pos_chess_coord = to_chess_coord(from_pos)
+    possible_moves.append(from_pos)
     moves1 = get_moves(grid, 1, 1, from_pos, is_limited_range)
     moves2 = get_moves(grid, 1, -1, from_pos, is_limited_range)
     moves3 = get_moves(grid, -1, -1, from_pos, is_limited_range)
@@ -74,12 +70,11 @@ def get_moves(grid, step_x, step_y, curr_pos, is_limited_range):
         if grid[next_pos[0]][next_pos[1]] < 0:
             break
         else:
-            next_pos_chess_coord = to_chess_coord(next_pos)
-            moves.append(next_pos_chess_coord)
+            # next_pos_chess_coord = to_chess_coord(next_pos)
+            moves.append(next_pos)
             curr_pos = next_pos
             if (is_limited_range):            
                 break
-    # print ("step: ({}, {}): {}".format(step_x, step_y, moves))
     return moves 
 
     
@@ -88,36 +83,36 @@ class Piece:
         # standard initialisation of piece
         self.name = name
         self.from_pos = from_pos
-
+    
     def get_valid_moves(self, grid):
         if (self.name == "Rook"):
-            return get_straight_moves(grid, self.from_pos, False)
+            return flatten(get_straight_moves(grid, self.from_pos, False))
         elif (self.name == "Knight"):
-            return get_knight_moves(grid, self.from_pos)
+            return flatten(get_knight_moves(grid, self.from_pos))
         elif (self.name == "Bishop"):
-            return get_diagonal_moves(grid, self.from_pos, False)
+            return flatten(get_diagonal_moves(grid, self.from_pos, False))
         elif (self.name == "Queen"):
             moves_straight = get_straight_moves(grid, self.from_pos, False)
             moves_diagonal = get_diagonal_moves(grid, self.from_pos, False)
             moves_straight.append(moves_diagonal)
-            return moves_straight
+            return flatten(moves_straight)
         elif (self.name == "King"):
             moves_straight = get_straight_moves(grid, self.from_pos, True)
             moves_diagonal = get_diagonal_moves(grid, self.from_pos, True)
             moves_straight.append(moves_diagonal)
-            return moves_straight
+            return flatten(moves_straight)
         elif (self.name == "Ferz"):
-            return get_diagonal_moves(grid, self.from_pos, True)
+            return flatten(get_diagonal_moves(grid, self.from_pos, True))
         elif (self.name == "Princess"):
             moves_diagonal = get_diagonal_moves(grid, self.from_pos, False)
             moves_knight = get_knight_moves(grid, self.from_pos)
             moves_diagonal.append(moves_knight)
-            return moves_diagonal
+            return flatten(moves_diagonal)
         elif (self.name == "Empress"):
             moves_straight = get_straight_moves(grid, self.from_pos, False)
             moves_knight = get_knight_moves(grid, self.from_pos)
             moves_straight.append(moves_knight)
-            return moves_straight
+            return flatten(moves_straight)
 
 def flatten(S):
     if S == []:
@@ -141,28 +136,36 @@ class Board:
         for i in range(columns_no):
             self.board.append([None] * columns_no)
         
-        self.pieces = pieces
         self.grid = grid
 
-        # add enemies possible move
-        piece_list = []
-        
-        for i in range(len(pieces)):
-            piece_list.append(Piece(pieces[i][0], pieces[i][1]))
+        pieces_obj = []
 
-        possible_enemy_moves = []
-        for i in range(len(piece_list)):
-            new_list = piece_list[i].get_valid_moves(self.grid)
-            possible_enemy_moves.append(new_list)
-    
-        possible_enemy_moves = flatten(possible_enemy_moves)
-        blocked_square = set()
-        for i in range (len(possible_enemy_moves)):
-            curr_square = possible_enemy_moves[i]
-            blocked_square.add(curr_square)
-            (r, c) = to_grid_coord(curr_square)
-            grid[r][c] = -2
+        # pieces is a dict of <(r, c): name>
+        for (pos, name) in pieces.items():
+            pieces_obj.append(Piece(name, pos))
 
+        self.pieces_obj = pieces_obj
+
+class State:
+    # a state is a config of the board -> a dict of <chess position: piece>
+    # initial state: receives a dictionary of pieces of form [(r,c), piece]
+    # goal state: k pieces, none threatening each other
+
+    def __init__(self, dict, board):
+        self.board = board
+        self.dict = dict
+
+     # run through the dict, check for each piece possible moves, if dict[possible_move] != null then that piece is threatening another pieace -> heuristic++
+
+    # get the total heuristic of the state - number of pairs threatening each other
+    def get_heuristic_of_state(self):
+        heuristic = 0
+        for (pos, piece) in self.dict.items():
+            valid_moves = piece.get_valid_moves(self.board.grid)
+            for move in valid_moves:
+                if move in self.dict.keys() and move != pos:
+                    heuristic += 1
+        return heuristic / 2
 
 #############################################################################
 ######## Implement Search Algorithm
