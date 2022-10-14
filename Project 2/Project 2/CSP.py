@@ -1,5 +1,8 @@
+import heapq
+from queue import PriorityQueue
 from random import randint
 import sys
+from typing import Dict
 
 def get_manhattan_dist(from_pos, to_pos):
     x = ord(to_pos[0] - from_pos[0])
@@ -84,6 +87,9 @@ class Piece:
         self.name = name
         self.from_pos = from_pos
     
+    def update_from_pos(self, from_pos: tuple[int, int]):
+        self.from_pos = from_pos
+        
     def get_valid_moves(self, grid):
         if (self.name == "Rook"):
             return flatten(get_straight_moves(grid, self.from_pos, False))
@@ -131,27 +137,49 @@ def to_grid_coord(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
 
 class Board:
-    def __init__(self, rows_no, columns_no, grid, pieces): 
+    def __init__(self, rows_no, columns_no, grid, given_pieces_num): 
         self.board = [] * rows_no
         for i in range(columns_no):
             self.board.append([None] * columns_no)
         
         self.grid = grid
 
-        pieces_obj = []
+        pieces_count_dict = {}
+        # pieces is an array of count
+        # change to dict of <Piece, count>
+        for i in range(len(given_pieces_num)):
+            piece = None
+            if (i == 0):
+                piece = Piece("King", None)
+            elif (i == 1):
+                piece = Piece("Queen", None)
+            elif (i == 2):
+                piece = Piece("Bishop", None)
+            elif (i == 3):
+                piece = Piece("Rook", None)
+            elif (i == 4):
+                piece = Piece("Knight", None)
+            elif (i == 5):                
+                piece = Piece("Ferz", None)
+            elif (i == 6):    
+                piece = Piece("Princess", None)
+            else:                
+                piece = Piece("Empress", None)
+            pieces_count_dict[piece] = given_pieces_num[i]
+        self.pieces_num_dict = pieces_count_dict
 
-        # pieces is a dict of <(r, c): name>
-        for (pos, name) in pieces.items():
-            pieces_obj.append(Piece(name, pos))
-
-        self.pieces_obj = pieces_obj
+    def is_all_pieces_assigned(self) -> bool:
+        for num_piece in self.pieces_num_dict.values():
+            if num_piece != 0:
+                return False
+        return True
 
 class State:
     # a state is a config of the board -> a dict of <chess position: piece>
     # initial state: receives a dictionary of pieces of form [(r,c), piece]
     # goal state: k pieces, none threatening each other
 
-    def __init__(self, dict, board):
+    def __init__(self, dict: dict, board: Board):
         self.board = board
         self.dict = dict
 
@@ -170,9 +198,134 @@ class State:
 #############################################################################
 ######## Implement Search Algorithm
 #############################################################################
-def search(rows, cols, grid, num_pieces):
-    print("hello")
 
+# get assignable cells - empty AND non-threatened
+def get_assignable_cells(board: Board, curr_state: State) -> dict:
+    empty_cells = {}
+    grid = board.grid
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid[i][j] == 0:
+                empty_cells[(i, j)] = 0
+    assignable_cells = empty_cells.copy()
+    for piece in curr_state.dict.values():
+        valid_moves = piece.get_valid_moves(board.grid)
+        for move in valid_moves:
+            if move in empty_cells.keys():
+                del assignable_cells[move]
+
+    return assignable_cells
+
+# Using MRV: choose the empty cell that has the least number of assignable pieces
+def select_unassigned_variable(board: Board, curr_state: State) -> tuple[int, int]:
+    # assignable = none other pieces are threatening it 
+    # cell must be empty -> get from board.grid
+    # board containing remaining of the given pieces
+    assignable_cells = get_assignable_cells(board, curr_state)
+    # a pqueue of <(pos x, pos y), int> to keep track of number of assignable pieces for each cell given a state, ordered by least num 
+    for pos, count1 in assignable_cells.items():
+        for piece, piece_num in board.pieces_num_dict.items():
+            if (piece_num > 0):
+                piece.update_from_pos(pos)
+                valid_moves = piece.get_valid_moves()
+                for move in valid_moves:
+                    # if it doesnt threaten any existing piece (the possible move is not occupied)
+                    if move not in curr_state.dict.keys():
+                        count1 += piece_num
+    min_count = 26 * 26
+    return_pos = None
+    for pos, count in assignable_cells.items():
+        if count < min_count:
+            min_count = count
+            return_pos = pos
+    return return_pos
+
+#for each remaining pieces (already arranged in order of LCV - choose the piece that has the least number of possible moves)
+def get_order_domain_values(board: Board, state: State, pos: tuple[int, int]) -> list:
+    order_domain_values = PriorityQueue()
+    for piece in board.pieces_num_dict.keys():
+        piece.update_from_pos(pos)
+        valid_moves = piece.get_valid_moves()
+        for move in valid_moves:
+            # check if its consistent with assignemetn
+            if move in state.dict.keys():
+                total_possible_moves_num -= 1
+        order_domain_values.put(total_possible_moves_num, piece)
+
+    # list of { num of possible moves, piece }
+    result = []
+    while (not order_domain_values.empty()):
+        result.append(order_domain_values.get())
+
+    return result
+
+def create_return_state_list(state: State):
+    dict = {}
+    for (pos, piece) in state.dict.items():
+        (x, y) = to_chess_coord(pos)
+        name = piece.name
+        dict[(x, y)] = name
+    return dict
+
+def search(rows, cols, grid, num_pieces):
+    board  = Board(rows, cols, grid, num_pieces)
+    initial_state = State({}, board)
+    result = backtrack(initial_state, board)
+    return create_return_state_list(result)
+
+def forward_check(board: Board, pos: tuple[int, int], state: State):
+    possible_values = get_order_domain_values(board, state, pos)
+    if (len(possible_values) == 0):
+        return None
+    else:
+        return possible_values
+
+# function to do CSP backtracking, curr_state is empty at the start
+def backtrack(curr_state: State, board: Board) -> State:
+    # if assignment is complete (all the given pieces have been assigned its position) -> return the curr_state
+    if (board.is_all_pieces_assigned()):
+        return curr_state
+
+    # next cell to have the piece = an empty cell, determined with variable order heuristic - MRV: choose the one that has the least possible number of assignable pieces
+    next_cell = select_unassigned_variable(board, curr_state)
+
+    # for each remaining pieces (already arranged in order of LCV - choose the piece that has the least number of possible moves)
+    remaining_pieces = get_order_domain_values(board, next_cell)
+    if len(remaining_pieces) > 0:
+        for piece in remaining_pieces:
+            piece.update_from_pos(next_cell)
+            valid_moves = piece.get_valid_moves(board.grid)
+            # if the piece does not threaten any other piece (consistent with assignment) - then add the piece into curr_state {var = value}
+            for move in valid_moves:
+                if move not in curr_state.dict.keys():
+                    curr_state.dict[next_cell] = piece
+                
+            # inferences with forward checking for the current assigned cell
+            inferences = forward_check(board, next_cell, curr_state)
+
+            # if inferences not failure then
+            if inferences is not None: 
+                # add inferences to csp
+                # add piece to board (update board grid)
+                old_value = board.grid[next_cell[0]][next_cell[1]]
+                board.grid[next_cell[0]][next_cell[1]] = -2
+                board.pieces_num_dict[piece] -= 1
+
+                # result = backtrack(curr_state) - continues recursively as long as the assignment is viable
+                result = backtrack(curr_state, board)
+
+                # if result is not failure then return result
+                if result is not None:
+                    return result
+                
+                # remove inferences from csp
+                board.grid[next_cell[0]][next_cell[1]] = old_value
+                board.pieces_num_dict[piece] += 1
+
+            # remove { var = value }
+            del curr_state.dict[next_cell]
+        # return None if there is no possible assignment 
+    return None
 
 #############################################################################
 ######## Parser function and helper functions
