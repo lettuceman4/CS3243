@@ -224,7 +224,8 @@ def create_return_state_list(state: State):
 def search(rows, cols, grid, num_pieces):
     board  = Board(rows, cols, grid, num_pieces)
     initial_state = State({}, board)
-    result = backtrack(initial_state, board)
+    assignable_cells = get_assignable_cells(board, initial_state)
+    result = backtrack(initial_state, board, assignable_cells)
     return create_return_state_list(result)
 
 # def forward_check(board: Board, pos, state: State):
@@ -293,13 +294,12 @@ def forward_check_inference(board: Board, state: State) -> bool:
         total_remaining += count
     return len(remaining_cells) > total_remaining - 1
 
-def backtrack(curr_state: State, board: Board):
+def backtrack(curr_state: State, board: Board, assignable_cells: list):
     if (board.is_all_pieces_assigned()):
         return curr_state
 
     next_piece = select_unassigned_piece(board.pieces_num_dict)
     # print("next_piece: ", next_piece)
-    assignable_cells = get_assignable_cells(board, curr_state)
     # print("possible_cells: ", print_moves(assignable_cells))
 
     for cell in assignable_cells:
@@ -313,7 +313,13 @@ def backtrack(curr_state: State, board: Board):
             board.pieces_num_dict[next_piece] -= 1 
 
             if (forward_check_inference(board, curr_state)):
-                result = backtrack(curr_state, board)
+                #update assignable cells
+                blocked_cells = curr_piece.get_valid_moves(board.grid)
+                for c in blocked_cells:
+                    if c in assignable_cells:
+                        assignable_cells.remove(c)
+                
+                result = backtrack(curr_state, board, assignable_cells)
                 
                 if result is not None:
                     return result
@@ -321,6 +327,8 @@ def backtrack(curr_state: State, board: Board):
             board.grid[cell[0]][cell[1]] = original_val
             board.pieces_num_dict[next_piece] += 1 
             del curr_state.dict[cell]
+            assignable_cells = get_assignable_cells(board, curr_state)
+
     return None
 
 
