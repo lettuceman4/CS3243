@@ -221,6 +221,8 @@ def search(rows, cols, grid, pieces, k):
         dict[piece.from_pos] = piece
     
     initial_state = State(dict, board)
+    if (initial_state.get_heuristic_of_state() == 0):
+        return create_return_state_list(initial_state)
     starting_states = generate_next_states(initial_state)
     # max value possible of global min is n
     global_min = n
