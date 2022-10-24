@@ -208,7 +208,7 @@ class State:
                         black_value += PIECE_VALUES[piece.name]
         return white_value - black_value
 
-def get_next_states(curr_state: State, is_white_turn: bool) -> list[State]:
+def get_next_states(curr_state: State, is_white_turn: bool) -> list:
     result = []
     for j in range(COLUMNS):
         for i in range(ROWS):
@@ -256,18 +256,54 @@ def is_draw(curr_state: State) -> bool:
                     black_count += 1
     return black_count == white_count and king_count == 2
 
-def are_both_kings_in_board(curr_state: State):
-    pass
-
-def is_checkmate(grid) -> bool:
+def is_checkmate(curr_state: State, is_white_turn) -> bool:
     pass
 
 def is_endgame(curr_state: State, is_white_turn) -> bool:
     if (move_count == 50 and is_white_turn):
         return is_draw(curr_state)
-#Implement your minimax with alpha-beta pruning algorithm here.
-def ab(board):
-    pass
+
+#Implement your minimax with alpha-beta pruning algorithm here. Returns a state that maximise for white player and minimise for black player
+def ab(curr_state: State, alpha: State, beta: State, depth: int, is_white_turn: bool) -> State:
+    if (depth == 0):
+        return state
+    
+    if (is_white_turn):
+        max_state = curr_state.get_objective_value_of_state()
+        next_states = get_next_states(curr_state)
+        for state in next_states:
+            eval = ab(state, alpha, beta, depth - 1, False)
+            max_state = get_max_state(eval, max_state)
+            alpha = get_max_state(alpha, eval)
+            if (alpha.get_objective_value_of_state() >= beta.get_objective_value_of_state()):
+                break
+        return max_state
+    else:
+        min_state = curr_state.get_objective_value_of_state()
+        next_states = get_next_states(curr_state)
+        for state in next_states:
+            eval = ab(state, alpha, beta, depth - 1, True)
+            min_state = get_min_state(eval, min_state)
+            beta = get_min_state(beta, eval)
+            if (beta.get_objective_value_of_state() <= alpha.get_objective_value_of_state()):
+                break
+        return min_state
+    
+def get_max_state(state1: State, state2: State) -> State:
+    obj_1 = state1.get_objective_value_of_state()
+    obj_2 = state2.get_objective_value_of_state()
+    if (obj_1 >= obj_2):
+        return state1
+    else:
+        return state2
+
+def get_min_state(state1: State, state2: State) -> State:
+    obj_1 = state1.get_objective_value_of_state()
+    obj_2 = state2.get_objective_value_of_state()
+    if (obj_1 <= obj_2):
+        return state1
+    else:
+        return state2
 
 #############################################################################
 ######## Parser function and helper functions
