@@ -20,6 +20,7 @@ PIECE_VALUES = {
     "Queen": 8,
      "King": 100,
 }
+move_count = 0
 
 # Helper functions to aid in your implementation. Can edit/remove
 #############################################################################
@@ -239,12 +240,31 @@ def is_out_of_valid_moves() -> bool:
     pass
 
 #In this game, we only consider the game to be a draw if White and Black have the same number of pieces left after 50 consecutive moves. This means that there is no change in the number of pieces in the board for 50 moves in a row, implying a Draw. Furthermore, this can only occur if both Kings are still left on the board. 
-def is_draw() -> bool:
+def is_draw(curr_state: State) -> bool:
+    black_count = 0
+    white_count = 0
+    king_count = 0
+    for j in range(COLUMNS):
+        for i in range(ROWS):
+            if curr_state.grid[i][j] is not None:
+                piece = curr_state.grid[i][j]
+                if (piece.name == "King"):
+                    king_count += 1
+                if (piece.is_white):
+                    white_count += 1
+                else:
+                    black_count += 1
+    return black_count == white_count and king_count == 2
+
+def are_both_kings_in_board(curr_state: State):
     pass
 
 def is_checkmate(grid) -> bool:
     pass
 
+def is_endgame(curr_state: State, is_white_turn) -> bool:
+    if (move_count == 50 and is_white_turn):
+        return is_draw(curr_state)
 #Implement your minimax with alpha-beta pruning algorithm here.
 def ab(board):
     pass
@@ -322,7 +342,7 @@ def studentAgent(gameboard):
         piece_obj = Piece(piece[0], pos, piece[1] == WHITE)
         grid[pos[0]][pos[1]] = piece_obj
     
-    board = Board(grid)
+    initial_state = State(grid)
     move = ab(gameboard)
     return move #Format to be returned (('a', 0), ('b', 3))
 
