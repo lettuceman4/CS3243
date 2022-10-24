@@ -210,10 +210,24 @@ class State:
                         black_value += PIECE_VALUES[piece.name]
         return white_value - black_value
 
-def get_next_states(curr_state: State) -> list[State]:
+def get_next_states(curr_state: State, is_white_turn: bool) -> list[State]:
+    result = []
     for j in range(COLUMNS):
         for i in range(ROWS):
-            pass
+            if curr_state.grid[i][j] is not None:
+                # only move the piece of the current turn 
+                piece = curr_state.grid[i][j]
+                if (piece.is_white == is_white_turn):
+                    moves = piece.get_valid_moves()
+                    for move in moves:
+                        new_grid = copy.deepcopy(curr_state.grid)
+                        # move the piece from its curr pos
+                        new_grid[i][j] = None
+                        # put the pieace in new move
+                        new_grid[move[0]][move[1]] = piece
+                        new_state = State(new_grid)
+                        result.append(new_state)
+    return result
 #Implement your minimax with alpha-beta pruning algorithm here.
 def ab(board):
     pass
