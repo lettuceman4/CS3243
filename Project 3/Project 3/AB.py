@@ -55,7 +55,6 @@ def get_moves(grid, step_x, step_y, curr_pos, is_limited_range, is_white):
 def get_knight_moves(grid, from_pos, is_white):
     possible_moves = []
     # curr_pos_chess_coord = to_chess_coord(from_pos)
-    possible_moves.append(from_pos)
     moves1 = get_moves(grid, -2, 1, from_pos, True, is_white)
     moves2 = get_moves(grid, -2, -1, from_pos, True, is_white)
     moves3 = get_moves(grid, 2, -1, from_pos, True, is_white)
@@ -103,7 +102,6 @@ def get_pawn_moves(grid, curr_pos, is_white):
 def get_straight_moves(grid, curr_pos, is_limited_range, is_white):
     possible_moves = []
     # curr_pos_chess_coord = to_chess_coord(curr_pos)
-    possible_moves.append(curr_pos)
     moves_left = get_moves(grid, -1, 0, curr_pos, is_limited_range, is_white)
     moves_right = get_moves(grid, 1, 0, curr_pos, is_limited_range, is_white)
     moves_up = get_moves(grid, 0, -1, curr_pos, is_limited_range, is_white)
@@ -117,7 +115,6 @@ def get_straight_moves(grid, curr_pos, is_limited_range, is_white):
 def get_diagonal_moves(grid, from_pos, is_limited_range, is_white):
     possible_moves = []
     # curr_pos_chess_coord = to_chess_coord(from_pos)
-    possible_moves.append(from_pos)
     moves1 = get_moves(grid, 1, 1, from_pos, is_limited_range, is_white)
     moves2 = get_moves(grid, 1, -1, from_pos, is_limited_range, is_white)
     moves3 = get_moves(grid, -1, -1, from_pos, is_limited_range, is_white)
