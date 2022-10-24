@@ -1,3 +1,4 @@
+import copy
 import sys
 
 ### IMPORTANT: Remove any print() functions or rename any print functions/variables/string when submitting on CodePost
@@ -29,23 +30,27 @@ def is_still_in_board(grid, grid_pos):
 
 def get_moves(grid, step_x, step_y, curr_pos, is_limited_range, is_white):
     moves = []
-    #need to check for threatened position
     # need to check if its out of the board
     while(is_still_in_board(grid, curr_pos)):
         next_pos = (curr_pos[0] + step_x, curr_pos[1] + step_y)
         if (not is_still_in_board(grid, next_pos)):
             break
-        if (include_next_pos(next_pos=next_pos, is_white=is_white, grid=grid)):
-            moves.append(next_pos)
-            curr_pos = next_pos
-            if (is_limited_range):            
-                break
-        else:
-            break
-    return moves 
 
-def include_next_pos(next_pos, is_white: bool, grid):
-    return grid[next_pos[0]][next_pos[1]].is_white != is_white
+        # only blocked by own piece, 
+        # and break right after taking another piece
+        if (is_capturing_next_pos(next_pos, grid, is_white)):
+            moves.append(next_pos)
+            break
+        # not capturing and still in board
+        else:
+            if (grid[next_pos[0]][next_pos[1]] is None):
+                moves.append(next_pos)
+                curr_pos = next_pos
+                if (is_limited_range):            
+                    break
+            else:
+                break
+    return moves 
 
 def get_knight_moves(grid, from_pos, is_white):
     possible_moves = []
@@ -69,10 +74,10 @@ def get_knight_moves(grid, from_pos, is_white):
     possible_moves.append(moves8)
     return list(filter(lambda x: x, possible_moves))
 
-def is_pawn_move_included(diag_pos, grid, is_white):
-    if (is_still_in_board(grid, diag_pos)):
-        if (grid[diag_pos[0]][diag_pos[1]] is not None):
-            piece = grid[diag_pos[0]][diag_pos[1]]
+def is_capturing_next_pos(next_pos, grid, is_white):
+    if (is_still_in_board(grid, next_pos)):
+        if (grid[next_pos[0]][next_pos[1]] is not None):
+            piece = grid[next_pos[0]][next_pos[1]]
             return piece.is_white != is_white
     return False
 
@@ -88,10 +93,10 @@ def get_pawn_moves(grid, curr_pos, is_white):
     and grid[next_pos_straight[0]][next_pos_straight[1]] is None):
         moves.append(next_pos_straight)
 
-    if (is_pawn_move_included(next_pos_diagonal_right)):
+    if (is_capturing_next_pos(next_pos_diagonal_right)):
         moves.append(next_pos_diagonal_right)
     
-    if (is_pawn_move_included(next_pos_diagonal_left)):
+    if (is_capturing_next_pos(next_pos_diagonal_left)):
         moves.append(next_pos_diagonal_left)
     return moves
 
@@ -205,6 +210,10 @@ class State:
                         black_value += PIECE_VALUES[piece.name]
         return white_value - black_value
 
+def get_next_states(curr_state: State) -> list[State]:
+    for j in range(COLUMNS):
+        for i in range(ROWS):
+            pass
 #Implement your minimax with alpha-beta pruning algorithm here.
 def ab(board):
     pass
