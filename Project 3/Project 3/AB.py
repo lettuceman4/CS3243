@@ -225,6 +225,26 @@ def get_next_states(curr_state: State, is_white_turn: bool) -> list[State]:
                         new_state = State(new_grid)
                         result.append(new_state)
     return result
+
+# This occurs when the opponent’s King is in check, and there is no legal way to get it out of check. Since it is illegal for a player to make a move that puts or leaves its own King in check, if it is not possible to get its King out of check, then the player cannot make any other moves and the King is considered checkmated (and the game is over).
+def is_standard_checkmate() -> bool:
+    pass
+
+# This occurs when the opponent makes a move that will cause his King to be in check, or when his King is in check but he ignores it and makes a move that will cause his King to remain in check.
+def is_king_capture() -> bool:
+    pass
+
+# This occurs when the opponent cannot make any valid moves during his turn, as any move made by the opponent will cause its King to be placed in check, resulting in a self-checkmate in the next turn as we can capture his King piece.
+def is_out_of_valid_moves() -> bool:
+    pass
+
+#In this game, we only consider the game to be a draw if White and Black have the same number of pieces left after 50 consecutive moves. This means that there is no change in the number of pieces in the board for 50 moves in a row, implying a Draw. Furthermore, this can only occur if both Kings are still left on the board. 
+def is_draw() -> bool:
+    pass
+
+def is_checkmate(grid) -> bool:
+    pass
+
 #Implement your minimax with alpha-beta pruning algorithm here.
 def ab(board):
     pass
