@@ -162,7 +162,6 @@ class Piece:
             return moves_straight
         elif (self.name == "King"):
             moves_straight = get_straight_moves(grid, from_pos, True, self.is_white)
-            print(moves_straight)
             moves_diagonal = get_diagonal_moves(grid, from_pos, True, self.is_white)
             moves_straight.update(moves_diagonal)
             return moves_straight
@@ -195,6 +194,12 @@ def to_chess_coord(grid_pos):
 def to_grid_coord(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
 
+def has_king(pieces) -> bool:
+    for piece in pieces.values():
+        if piece.name == "King": 
+            return True
+    return False
+
 # should only change when a move is made
 class Board:
     def __init__(self, grid): 
@@ -203,7 +208,8 @@ class Board:
 # is dynamic
 class State:
     #state is in form of dict<pos: piece>
-    def __init__(self, white_pieces, black_pieces, is_white_turn):  
+    def __init__(self, white_pieces, black_pieces, is_white_turn, move_count):  
+        
         self.white_pieces = white_pieces
         self.black_pieces = black_pieces
         self.is_white_turn = is_white_turn
@@ -214,18 +220,21 @@ class State:
         for pos, piece in white_pieces.items():
             (i, j) = pos
             self.grid[i][j] = piece
+        self.move_count = move_count
     
     @staticmethod
     def get_state_from_gameboard(gameboard, is_white_turn):
         white_pieces = {}
         for pos, piece in gameboard.items():
+            # pos = to_grid_coord(pos)
             piece_obj = Piece(piece[0], piece[1] == WHITE)
             white_pieces[pos] = piece_obj
         black_pieces = {}
         for pos, piece in gameboard.items():
+            # pos = to_grid_coord(pos)
             piece_obj = Piece(piece[0], piece[1] == BLACK)
             black_pieces[pos] = piece_obj
-        return State(white_pieces, black_pieces, is_white_turn)
+        return State(white_pieces, black_pieces, is_white_turn, 0)
     
     def get_material_score(self):
         white_value = 0
@@ -235,10 +244,6 @@ class State:
         for black_piece in self.black_pieces.values():
             black_value += PIECE_MATERIALS[black_piece.name]    
         return white_value - black_value
-    
-    # white tries to maximise this, black tries to minimise
-    def evaluate(self):
-        pass
 
     def get_opponent_king_pos(self, is_white_turn):
         if (is_white_turn):
@@ -255,15 +260,16 @@ class Game:
     # This occurs when the opponent’s King is in check, and there is no legal way to get it out of check. Since it is illegal for a player to make a move that puts or leaves its own King in check, if it is not possible to get its King out of check, then the player cannot make any other moves and the King is considered checkmated (and the game is over).
     @staticmethod
     def is_standard_checkmate(curr_state: State, is_white_turn: bool) -> bool:
-        player_pieces = curr_state.white_pieces
-        enemy_pieces = curr_state.black_pieces
-        # if it is player turn, check if opponent king has no legal move to move out of check 
-        all_opponent_possible_moves = set()
-        king_pos = curr_state.get_opponent_king_pos(is_white_turn)
         if (is_white_turn):
-            king_piece = curr_state.black_pieces[king_pos]
+            playing_pieces = curr_state.white_pieces
+        else:
+            playing_pieces = curr_state.black_pieces
+        
+        return not has_king(playing_pieces)
 
-
+    @staticmethod
+    def evaluate(curr_state: State) -> int:
+        return curr_state.get_material_score() 
     # This occurs when the opponent makes a move that will cause his King to be in check, or when his King is in check but he ignores it and makes a move that will cause his King to remain in check.
     @staticmethod
     def is_king_capture() -> bool:
@@ -289,7 +295,7 @@ class Game:
             if (piece.name == "King"):
                 is_white_king_alive = True
                 break
-        return black_count == white_count and is_black_king_alive and is_white_king_alive
+        return black_count == white_count and is_black_king_alive and is_white_king_alive and curr_state.move_count >= 50
     
     @staticmethod
     # check if the current turn is checked by opponent   
@@ -317,27 +323,7 @@ class Game:
 
     @staticmethod
     def is_endgame(curr_state: State, is_white_turn) -> bool:
-        if (move_count == 50 and is_white_turn):
-            return Game.is_draw(curr_state)
-
-    # new pos should be ensured to be legal (not from the same team)
-    @staticmethod
-    def get_move_score(piece: Piece, grid, new_pos):
-        score = 0
-        (i, j) = new_pos
-        if (grid[i][j] is not None):
-            # capture a piece
-            piece_at_new_pos = grid[i][j]
-            score += (PIECE_MATERIALS[piece.name] - PIECE_MATERIALS[piece_at_new_pos.name]) * MOVE_UTILITY_COEFF["Capture"]
-
-    @staticmethod
-    def move_piece(piece: Piece, grid, new_pos) -> int:
-        (i, j) = new_pos
-        score = Game.get_move_score(piece, grid, new_pos)
-        grid[piece.from_pos[0]][piece.from_pos[1]] = None
-        piece.from_pos = (i, j)
-        grid[i][j] = piece
-        return score
+        return Game.is_standard_checkmate(curr_state, is_white_turn) or (Game.is_draw(curr_state) and is_white_turn)
 
 # get the all the moves that generate the next state, along with the next state
 def get_next_states(curr_state: State, is_white_turn: bool):
@@ -350,56 +336,52 @@ def get_next_states(curr_state: State, is_white_turn: bool):
         moves = piece.get_valid_moves(curr_state.grid, old_pos)
         for new_pos in moves:
             new_team_dict = copy.deepcopy(curr_team_dict)
-            curr_team_dict.pop(old_pos)
-            curr_team_dict[new_pos] = piece
+            new_team_dict.pop(old_pos)
+            new_team_dict[new_pos] = piece
             if (is_white_turn):
-                new_state = State(new_team_dict, curr_state.black_pieces, False)
+                new_state = State(new_team_dict, curr_state.black_pieces, False, curr_state.move_count + 1)
             else:
-                new_state = State(curr_state.white_pieces, new_team_dict, True)
-            result[new_pos] = old_pos, new_state
+                new_state = State(curr_state.white_pieces, new_team_dict, True, curr_state.move_count + 1)
+            result[(old_pos, new_pos)] = new_state
     return result
 
 #Implement your minimax with alpha-beta pruning algorithm here. Returns a state that maximise for white player and minimise for black player
-def ab(curr_state: State, alpha: State, beta: State, depth: int, is_white_turn: bool) -> State:
-    if (depth == 0):
-        return curr_state
-    
+def ab(curr_state: State, alpha: State, beta: State, depth: int, is_white_turn: bool):
+    # print("ab")
+    if (depth == 0 or Game.is_endgame(curr_state, is_white_turn)):
+        return None, Game.evaluate(curr_state)
     if (is_white_turn):
-        max_state = curr_state.evaluate()
+        max_eval = float("-infinity")
         next_states = get_next_states(curr_state, True)
-        for state in next_states:
-            eval = ab(state, alpha, beta, depth - 1, False)
-            max_state = get_max_state(eval, max_state)
-            alpha = get_max_state(alpha, eval)
-            if (alpha.evaluate() >= beta.evaluate()):
+        for move, state in next_states.items():
+            eval = ab(state, alpha, beta, depth - 1, False)[1]
+            max_eval = get_max(eval, max_eval)
+            alpha = get_max(alpha, eval)
+            if (alpha >= beta):
                 break
-        return max_state
+        return move, max_eval
     else:
-        min_state = curr_state.evaluate()
+        min_eval = float("infinity")
         next_states = get_next_states(curr_state, False)
-        for state in next_states:
-            eval = ab(state, alpha, beta, depth - 1, True)
-            min_state = get_min_state(eval, min_state)
-            beta = get_min_state(beta, eval)
-            if (beta.evaluate() <= alpha.evaluate()):
+        for move, state in next_states.items():
+            eval = ab(state, alpha, beta, depth - 1, True)[1]
+            min_eval = get_min(eval, min_eval)
+            beta = get_min(beta, eval)
+            if (beta <= alpha):
                 break
-        return min_state
-    
-def get_max_state(state1: State, state2: State) -> State:
-    obj_1 = state1.evaluate()
-    obj_2 = state2.evaluate()
-    if (obj_1 >= obj_2):
-        return state1
-    else:
-        return state2
+        return move, min_eval
 
-def get_min_state(state1: State, state2: State) -> State:
-    obj_1 = state1.evaluate()
-    obj_2 = state2.evaluate()
-    if (obj_1 <= obj_2):
-        return state1
+def get_max(n1: int, n2: int) -> int:
+    if (n1 >= n2):
+        return n1
     else:
-        return state2
+        return n2
+
+def get_min(n1: int, n2: int) -> int:
+    if (n1 >= n2):
+        return n2
+    else:
+        return n1
 
 #############################################################################
 ######## Parser function and helper functions
@@ -470,12 +452,13 @@ def setUpBoard():
 def studentAgent(gameboard):
     # You can code in here but you cannot remove this function, change its parameter or change the return type
     
-    for pos, piece in gameboard.items():
-        piece_obj = Piece(piece[0], pos, piece[1] == WHITE)
-        grid[pos[0]][pos[1]] = piece_obj
-    initial_state = State(grid)
-    move = ab(initial_state, float("-infinity"), float("infinity"), 4, True)
-    return move #Format to be returned (('a', 0), ('b', 3))
+    initial_state = State.get_state_from_gameboard(gameboard, True)
+    move = ab(initial_state, float("-infinity"), float("infinity"), 3, True)[0]
+    if (move is not None):
+        pos1 = to_chess_coord(move[0])
+        pos2 = to_chess_coord(move[1])
+        return pos1, pos2 #Format to be returned (('a', 0), ('b', 3))
+    return None
 
 def main():
     board = setUpBoard()[2]
