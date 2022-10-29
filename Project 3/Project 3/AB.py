@@ -1,7 +1,7 @@
 import copy
 from mimetypes import init
 import sys
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 ### IMPORTANT: Remove any print() functions or rename any print functions/variables/string when submitting on CodePost
 ### The autograder will not run if it detects any print function.
@@ -295,10 +295,8 @@ class Game:
     # check if the current turn is checked by opponent   
     def is_checked_by_opponent(curr_state: State, is_white_turn) -> bool:
         if (is_white_turn):
-            curr_team_pieces = curr_state.white_pieces
             enemy_team_pieces = curr_state.black_pieces
         else:
-            curr_team_pieces = curr_state.black_pieces
             enemy_team_pieces = curr_state.white_pieces
         # any pieces in the current team is threatening the opponent king
         opponent_king_position = curr_state.get_opponent_king_pos(is_white_turn)
@@ -309,6 +307,7 @@ class Game:
         enemy_possible_moves = set()
         for pos, piece in enemy_team_pieces.values():
             possible_moves = piece.get_valid_moves(curr_state.grid, pos)
+            enemy_possible_moves.update(pos)
             enemy_possible_moves.update(possible_moves)
 
         if (opponent_king_position in enemy_possible_moves):
@@ -340,22 +339,24 @@ class Game:
         grid[i][j] = piece
         return score
 
-
-
-def get_next_states(curr_state: State, is_white_turn: bool) -> list:
-    result = []
-    for j in range(COLUMNS):
-        for i in range(ROWS):
-            if curr_state.grid[i][j] is not None:
-                # only move the piece of the current turn 
-                piece = curr_state.grid[i][j]
-                if (piece.is_white == is_white_turn):
-                    moves = piece.get_valid_moves(curr_state.grid)
-                    for move in moves:
-                        new_grid = copy.deepcopy(curr_state.grid)
-                        Game.move_piece(piece, new_grid, move)
-                        new_state = State(new_grid)
-                        result.append(new_state)
+# get the all the moves that generate the next state, along with the next state
+def get_next_states(curr_state: State, is_white_turn: bool):
+    if (is_white_turn):
+        curr_team_dict = curr_state.white_pieces
+    else:
+        curr_team_dict = curr_state.black_pieces
+    result = {}
+    for old_pos, piece in curr_team_dict.items():
+        moves = piece.get_valid_moves(curr_state.grid, old_pos)
+        for new_pos in moves:
+            new_team_dict = copy.deepcopy(curr_team_dict)
+            curr_team_dict.pop(old_pos)
+            curr_team_dict[new_pos] = piece
+            if (is_white_turn):
+                new_state = State(new_team_dict, curr_state.black_pieces, False)
+            else:
+                new_state = State(curr_state.white_pieces, new_team_dict, True)
+            result[new_pos] = old_pos, new_state
     return result
 
 #Implement your minimax with alpha-beta pruning algorithm here. Returns a state that maximise for white player and minimise for black player
