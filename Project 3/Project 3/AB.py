@@ -65,7 +65,7 @@ def get_moves(grid, step_x, step_y, curr_pos, is_limited_range, is_white) -> set
     return moves 
 
 def get_knight_moves(grid, from_pos, is_white):
-    possible_moves =set()
+    possible_moves = set()
     # curr_pos_chess_coord = to_chess_coord(from_pos)
     moves1 = get_moves(grid, -2, 1, from_pos, True, is_white)
     moves2 = get_moves(grid, -2, -1, from_pos, True, is_white)
@@ -110,7 +110,6 @@ def get_pawn_moves(grid, curr_pos, is_white):
     if (is_capturing_next_pos(next_pos_diagonal_left, grid, is_white)):
         moves.add(next_pos_diagonal_left)
     
-    print(moves)
     return moves
 
 def get_straight_moves(grid, curr_pos, is_limited_range, is_white):
@@ -142,45 +141,41 @@ def get_diagonal_moves(grid, from_pos, is_limited_range, is_white):
     return possible_moves
 
 class Piece:
-    def __init__(self, name, from_pos, is_white):
+    def __init__(self, name, is_white):
         # standard initialisation of piece
         self.name = name
-        self.from_pos = from_pos
         self.is_white = is_white
-    
-    def update_from_pos(self, from_pos):
-        self.from_pos = from_pos
-        
-    def get_valid_moves(self, grid):
+
+    def get_valid_moves(self, grid, from_pos):
         if (self.name == "Rook"):
-            return get_straight_moves(grid, self.from_pos, False, self.is_white)
+            return get_straight_moves(grid, from_pos, False, self.is_white)
         elif (self.name == "Pawn"):
-            return get_pawn_moves(grid, self.from_pos, self.is_white)
+            return get_pawn_moves(grid, from_pos, self.is_white)
         elif (self.name == "Knight"):
-            return get_knight_moves(grid, self.from_pos, self.is_white)
+            return get_knight_moves(grid, from_pos, self.is_white)
         elif (self.name == "Bishop"):
-            return get_diagonal_moves(grid, self.from_pos, False, self.is_white)
+            return get_diagonal_moves(grid, from_pos, False, self.is_white)
         elif (self.name == "Queen"):
-            moves_straight = get_straight_moves(grid, self.from_pos, False, self.is_white)
-            moves_diagonal = get_diagonal_moves(grid, self.from_pos, False, self.is_white)
+            moves_straight = get_straight_moves(grid, from_pos, False, self.is_white)
+            moves_diagonal = get_diagonal_moves(grid, from_pos, False, self.is_white)
             moves_straight.update(moves_diagonal)
             return moves_straight
         elif (self.name == "King"):
-            moves_straight = get_straight_moves(grid, self.from_pos, True, self.is_white)
+            moves_straight = get_straight_moves(grid, from_pos, True, self.is_white)
             print(moves_straight)
-            moves_diagonal = get_diagonal_moves(grid, self.from_pos, True, self.is_white)
+            moves_diagonal = get_diagonal_moves(grid, from_pos, True, self.is_white)
             moves_straight.update(moves_diagonal)
             return moves_straight
         elif (self.name == "Ferz"):
-            return get_diagonal_moves(grid, self.from_pos, True, self.is_white)
+            return get_diagonal_moves(grid, from_pos, True, self.is_white)
         elif (self.name == "Princess"):
-            moves_diagonal = get_diagonal_moves(grid, self.from_pos, False, self.is_white)
-            moves_knight = get_knight_moves(grid, self.from_pos, self.is_white)
+            moves_diagonal = get_diagonal_moves(grid, from_pos, False, self.is_white)
+            moves_knight = get_knight_moves(grid, from_pos, self.is_white)
             moves_diagonal.update(moves_knight)
             return moves_diagonal
         elif (self.name == "Empress"):
-            moves_straight = get_straight_moves(grid, self.from_pos, False, self.is_white)
-            moves_knight = get_knight_moves(grid, self.from_pos, self.is_white)
+            moves_straight = get_straight_moves(grid, from_pos, False, self.is_white)
+            moves_knight = get_knight_moves(grid, from_pos, self.is_white)
             moves_straight.update(moves_knight)
             return moves_straight
 
@@ -207,31 +202,67 @@ class Board:
 
 # is dynamic
 class State:
-    def __init__(self, grid): 
-        self.grid = grid
+    #state is in form of dict<pos: piece>
+    def __init__(self, white_pieces, black_pieces, is_white_turn):  
+        self.white_pieces = white_pieces
+        self.black_pieces = black_pieces
+        self.is_white_turn = is_white_turn
+        self.grid = [[None for _ in range(COLUMNS)] for _ in range(ROWS)]
+        for pos, piece in black_pieces.items():
+            (i, j) = pos
+            self.grid[i][j] = piece
+        for pos, piece in white_pieces.items():
+            (i, j) = pos
+            self.grid[i][j] = piece
+    
+    @staticmethod
+    def get_state_from_gameboard(gameboard, is_white_turn):
+        white_pieces = {}
+        for pos, piece in gameboard.items():
+            piece_obj = Piece(piece[0], piece[1] == WHITE)
+            white_pieces[pos] = piece_obj
+        black_pieces = {}
+        for pos, piece in gameboard.items():
+            piece_obj = Piece(piece[0], piece[1] == BLACK)
+            black_pieces[pos] = piece_obj
+        return State(white_pieces, black_pieces, is_white_turn)
     
     def get_material_score(self):
         white_value = 0
         black_value = 0
-        for j in range(COLUMNS):
-            for i in range(ROWS):
-                if (self.grid[i][j] is not None):
-                    piece = self.grid[i][j]
-                    if (piece.is_white):
-                        white_value += PIECE_MATERIALS[piece.name]
-                    else:
-                        black_value += PIECE_MATERIALS[piece.name]
+        for white_piece in self.white_pieces.values():
+            white_value += PIECE_MATERIALS[white_piece.name]
+        for black_piece in self.black_pieces.values():
+            black_value += PIECE_MATERIALS[black_piece.name]    
         return white_value - black_value
     
     # white tries to maximise this, black tries to minimise
     def evaluate(self):
         pass
 
+    def get_opponent_king_pos(self, is_white_turn):
+        if (is_white_turn):
+            for pos, piece in self.black_pieces.items():
+                if (piece.name == "King"):
+                    return pos
+        else:
+            for pos, piece in self.white_pieces.items():
+                if (piece.name == "King"):
+                    return pos
+        return None
+
 class Game:
     # This occurs when the opponent’s King is in check, and there is no legal way to get it out of check. Since it is illegal for a player to make a move that puts or leaves its own King in check, if it is not possible to get its King out of check, then the player cannot make any other moves and the King is considered checkmated (and the game is over).
     @staticmethod
-    def is_standard_checkmate() -> bool:
-        pass
+    def is_standard_checkmate(curr_state: State, is_white_turn: bool) -> bool:
+        player_pieces = curr_state.white_pieces
+        enemy_pieces = curr_state.black_pieces
+        # if it is player turn, check if opponent king has no legal move to move out of check 
+        all_opponent_possible_moves = set()
+        king_pos = curr_state.get_opponent_king_pos(is_white_turn)
+        if (is_white_turn):
+            king_piece = curr_state.black_pieces[king_pos]
+
 
     # This occurs when the opponent makes a move that will cause his King to be in check, or when his King is in check but he ignores it and makes a move that will cause his King to remain in check.
     @staticmethod
@@ -246,23 +277,44 @@ class Game:
     #In this game, we only consider the game to be a draw if White and Black have the same number of pieces left after 50 consecutive moves. This means that there is no change in the number of pieces in the board for 50 moves in a row, implying a Draw. Furthermore, this can only occur if both Kings are still left on the board. 
     @staticmethod
     def is_draw(curr_state: State) -> bool:
-        black_count = 0
-        white_count = 0
-        king_count = 0
-        for j in range(COLUMNS):
-            for i in range(ROWS):
-                if curr_state.grid[i][j] is not None:
-                    piece = curr_state.grid[i][j]
-                    if (piece.name == "King"):
-                        king_count += 1
-                    if (piece.is_white):
-                        white_count += 1
-                    else:
-                        black_count += 1
-        return black_count == white_count and king_count == 2
+        black_count = len(curr_state.black_pieces)
+        white_count = len(curr_state.white_pieces)
+        is_black_king_alive = False
+        is_white_king_alive = False
+        for piece in curr_state.black_pieces.values():
+            if (piece.name == "King"):
+                is_black_king_alive = True
+                break
+        for piece in curr_state.white_pieces.values():
+            if (piece.name == "King"):
+                is_white_king_alive = True
+                break
+        return black_count == white_count and is_black_king_alive and is_white_king_alive
+    
+    @staticmethod
+    # check if the current turn is checked by opponent   
+    def is_checked_by_opponent(curr_state: State, is_white_turn) -> bool:
+        if (is_white_turn):
+            curr_team_pieces = curr_state.white_pieces
+            enemy_team_pieces = curr_state.black_pieces
+        else:
+            curr_team_pieces = curr_state.black_pieces
+            enemy_team_pieces = curr_state.white_pieces
+        # any pieces in the current team is threatening the opponent king
+        opponent_king_position = curr_state.get_opponent_king_pos(is_white_turn)
+        
+        assert opponent_king_position is not None
 
-    def is_checkmate(curr_state: State, is_white_turn) -> bool:
-        pass
+        # get all the enemy possible moves, if they contains king position -> checked
+        enemy_possible_moves = set()
+        for pos, piece in enemy_team_pieces.values():
+            possible_moves = piece.get_valid_moves(curr_state.grid, pos)
+            enemy_possible_moves.update(possible_moves)
+
+        if (opponent_king_position in enemy_possible_moves):
+            return True
+        
+        return False
 
     @staticmethod
     def is_endgame(curr_state: State, is_white_turn) -> bool:
@@ -416,16 +468,13 @@ def setUpBoard():
 
 def studentAgent(gameboard):
     # You can code in here but you cannot remove this function, change its parameter or change the return type
-    grid = [[None for _ in range(COLUMNS)] for _ in range(ROWS)]
+    
     for pos, piece in gameboard.items():
         piece_obj = Piece(piece[0], pos, piece[1] == WHITE)
         grid[pos[0]][pos[1]] = piece_obj
-        if (piece_obj.name == "Ferz"):
-            print("Ferz")
-            return piece_obj.get_valid_moves(grid)
     initial_state = State(grid)
-    # move = ab(initial_state, float("-infinity"), float("infinity"), 4, True)
-    # return move #Format to be returned (('a', 0), ('b', 3))
+    move = ab(initial_state, float("-infinity"), float("infinity"), 4, True)
+    return move #Format to be returned (('a', 0), ('b', 3))
 
 def main():
     board = setUpBoard()[2]
