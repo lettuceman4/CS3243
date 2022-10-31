@@ -225,15 +225,14 @@ class State:
     @staticmethod
     def get_state_from_gameboard(gameboard, is_white_turn):
         white_pieces = {}
-        for pos, piece in gameboard.items():
-            # pos = to_grid_coord(pos)
-            piece_obj = Piece(piece[0], piece[1] == WHITE)
-            white_pieces[pos] = piece_obj
         black_pieces = {}
         for pos, piece in gameboard.items():
-            # pos = to_grid_coord(pos)
-            piece_obj = Piece(piece[0], piece[1] == BLACK)
-            black_pieces[pos] = piece_obj
+            pos = to_grid_coord(pos)
+            piece_obj = Piece(piece[0], piece[1] == WHITE)
+            if (piece[1] == WHITE):
+                white_pieces[pos] = piece_obj
+            else:
+                black_pieces[pos] = piece_obj
         return State(white_pieces, black_pieces, is_white_turn, 0)
     
     def get_material_score(self):
@@ -270,17 +269,7 @@ class Game:
     @staticmethod
     def evaluate(curr_state: State) -> int:
         return curr_state.get_material_score() 
-    # This occurs when the opponent makes a move that will cause his King to be in check, or when his King is in check but he ignores it and makes a move that will cause his King to remain in check.
-    @staticmethod
-    def is_king_capture() -> bool:
-        pass
-
-    # This occurs when the opponent cannot make any valid moves during his turn, as any move made by the opponent will cause its King to be placed in check, resulting in a self-checkmate in the next turn as we can capture his King piece.
-    @staticmethod
-    def is_out_of_valid_moves() -> bool:
-        pass
-
-    #In this game, we only consider the game to be a draw if White and Black have the same number of pieces left after 50 consecutive moves. This means that there is no change in the number of pieces in the board for 50 moves in a row, implying a Draw. Furthermore, this can only occur if both Kings are still left on the board. 
+    
     @staticmethod
     def is_draw(curr_state: State) -> bool:
         black_count = len(curr_state.black_pieces)
@@ -307,14 +296,15 @@ class Game:
         # any pieces in the current team is threatening the opponent king
         opponent_king_position = curr_state.get_opponent_king_pos(is_white_turn)
         
-        assert opponent_king_position is not None
+        # assert opponent_king_position is not None
 
         # get all the enemy possible moves, if they contains king position -> checked
         enemy_possible_moves = set()
-        for pos, piece in enemy_team_pieces.values():
+        for pos, piece in enemy_team_pieces.items():
             possible_moves = piece.get_valid_moves(curr_state.grid, pos)
-            enemy_possible_moves.update(pos)
-            enemy_possible_moves.update(possible_moves)
+            enemy_possible_moves.add((pos))
+            for move in enemy_possible_moves:
+                enemy_possible_moves.add((move))
 
         if (opponent_king_position in enemy_possible_moves):
             return True
@@ -322,31 +312,47 @@ class Game:
         return False
 
     @staticmethod
-    def is_endgame(curr_state: State, is_white_turn) -> bool:
-        return Game.is_standard_checkmate(curr_state, is_white_turn) or (Game.is_draw(curr_state) and is_white_turn)
+    def is_endgame(curr_state: State, is_white_turn: bool) -> bool:
+        return Game.is_standard_checkmate(curr_state, is_white_turn)
 
 # get the all the moves that generate the next state, along with the next state
 def get_next_states(curr_state: State, is_white_turn: bool):
     if (is_white_turn):
         curr_team_dict = curr_state.white_pieces
+        enemy_team_dict = curr_state.black_pieces
     else:
         curr_team_dict = curr_state.black_pieces
+        enemy_team_dict = curr_state.white_pieces
     result = {}
     for old_pos, piece in curr_team_dict.items():
         moves = piece.get_valid_moves(curr_state.grid, old_pos)
         for new_pos in moves:
-            new_team_dict = copy.deepcopy(curr_team_dict)
+            new_team_dict = copy.copy(curr_team_dict)
             new_team_dict.pop(old_pos)
             new_team_dict[new_pos] = piece
+
+            # if moving turn is capturing enemy team
+            new_enemy_team_dict = copy.copy(enemy_team_dict)
+            if (new_pos in set(enemy_team_dict.keys())):
+                new_enemy_team_dict.pop(new_pos)
+
             if (is_white_turn):
-                new_state = State(new_team_dict, curr_state.black_pieces, False, curr_state.move_count + 1)
+                new_state = State(new_team_dict, new_enemy_team_dict, False, curr_state.move_count + 1)
             else:
-                new_state = State(curr_state.white_pieces, new_team_dict, True, curr_state.move_count + 1)
-            result[(old_pos, new_pos)] = new_state
+                new_state = State(new_enemy_team_dict, new_team_dict, True, curr_state.move_count + 1)
+            
+            # only allows move that is not checked
+            if (not Game.is_checked_by_opponent(new_state, is_white_turn)):
+                result[(old_pos, new_pos)] = new_state
+            
+            # allows 1 move that allows check if result is empty
+            if len(result) == 0:
+                result[(old_pos, new_pos)] = new_state
+
     return result
 
 #Implement your minimax with alpha-beta pruning algorithm here. Returns a state that maximise for white player and minimise for black player
-def ab(curr_state: State, alpha: State, beta: State, depth: int, is_white_turn: bool):
+def ab(curr_state: State, alpha: int, beta: int, depth: int, is_white_turn: bool):
     # print("ab")
     if (depth == 0 or Game.is_endgame(curr_state, is_white_turn)):
         return None, Game.evaluate(curr_state)
@@ -460,10 +466,39 @@ def studentAgent(gameboard):
         return pos1, pos2 #Format to be returned (('a', 0), ('b', 3))
     return None
 
-def main():
-    board = setUpBoard()[2]
-    print(studentAgent(board))
+# def main():
+#     startBoard = {
+#         ('d', 6): ('King', 'Black'),
+#         ('c', 6): ('Queen', 'Black'),
+#         ('b', 6): ('Bishop', 'Black'),
+#         ('a', 6): ('Knight', 'Black'),
+#         ('g', 6): ('Rook', 'Black'),
+#         ('e', 6): ('Princess', 'Black'),
+#         ('f', 6): ('Empress', 'Black'),
+#         ('b', 5): ('Pawn', 'Black'),
+#         ('c', 5): ('Pawn', 'Black'),
+#         ('d', 5): ('Pawn', 'Black'),
+#         ('e', 5): ('Pawn', 'Black'),
+#         ('f', 5): ('Pawn', 'Black'),
+#         ('a', 5): ('Ferz', 'Black'),
+#         ('g', 5): ('Ferz', 'Black'),        
+        
+#         ('d', 0): ('King', 'White'),
+#         ('c', 0): ('Queen', 'White'),
+#         ('b', 0): ('Bishop', 'White'),
+#         ('a', 0): ('Knight', 'White'),
+#         ('g', 0): ('Rook', 'White'),
+#         ('e', 0): ('Princess', 'White'),
+#         ('f', 0): ('Empress', 'White'),
+#         ('b', 1): ('Pawn', 'White'),
+#         ('c', 1): ('Pawn', 'White'),
+#         ('d', 1): ('Pawn', 'White'),
+#         ('e', 1): ('Pawn', 'White'),
+#         ('f', 1): ('Pawn', 'White'),
+#         ('a', 1): ('Ferz', 'White'),
+#         ('g', 1): ('Ferz', 'White')}
+#     print(studentAgent(startBoard))
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
