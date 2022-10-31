@@ -95,9 +95,9 @@ def is_capturing_next_pos(next_pos, grid, is_white):
 def get_pawn_moves(grid, curr_pos, is_white):
     moves = set()
     dir = 1 if is_white else -1
-    next_pos_straight = (curr_pos[0], curr_pos[1] + dir)
+    next_pos_straight = (curr_pos[0] + dir, curr_pos[1])
     next_pos_diagonal_right = (curr_pos[0] + dir, curr_pos[1] + dir)
-    next_pos_diagonal_left = (curr_pos[0] - dir, curr_pos[1] + dir)
+    next_pos_diagonal_left = (curr_pos[0] + dir, curr_pos[1] - dir)
     
     # straight move only execute if no piece in front
     if (is_still_in_board(grid, next_pos_straight) 
