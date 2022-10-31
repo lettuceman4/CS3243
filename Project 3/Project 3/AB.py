@@ -11,6 +11,321 @@ ROWS = 7
 COLUMNS = 7
 DEPTH = 4
 
+# encourages pawn to advance, discourage the engine from leaving central pawns unmoved https://www.chessprogramming.org/Simplified_Evaluation_Function#Piece-Square_Tables
+PAWN_SQUARE_TABLE = {
+    (0, 0): 0,
+    (0, 1): 0,
+    (0, 2): 0,
+    (0, 3): 0,
+    (0, 4): 0,
+    (0, 5): 0,
+    (0, 6): 0,
+    (1, 0): 5,
+    (1, 1): 10,
+    (1, 2): -10,
+    (1, 3): -20,
+    (1, 4): -10,
+    (1, 5): 10,
+    (1, 6): 5,
+    (2, 0): 5,
+    (2, 1): -5,
+    (2, 2): -10,
+    (2, 3): 0,
+    (2, 4): -10,
+    (2, 5): -5,
+    (2, 6): 5,
+    (3, 0): 5,
+    (3, 1): 5,
+    (3, 2): 10,
+    (3, 3): 25,
+    (3, 4): 10,
+    (3, 5): 5,
+    (3, 6): 5,
+    (4, 0): 10,
+    (4, 1): 10,
+    (4, 2): 20,
+    (4, 3): 30,
+    (4, 4): 20,
+    (4, 5): 10,
+    (4, 6): 10,
+    (5, 0): 50,
+    (5, 1): 50,
+    (5, 2): 50,
+    (5, 3): 50,
+    (5, 4): 50,
+    (5, 5): 50,
+    (5, 6): 50,
+    (6, 0): 0,
+    (6, 1): 0,
+    (6, 2): 0,
+    (6, 3): 0,
+    (6, 4): 0,
+    (6, 5): 0,
+    (6, 6): 0
+}
+
+KNIGHT_SQUARE_TABLE = {
+    (0, 0): -50,
+    (0, 1): -40,
+    (0, 2): -30,
+    (0, 3): -30,
+    (0, 4): -30,
+    (0, 5): -40,
+    (0, 6): -50,
+    (1, 0): -40,
+    (1, 1): -20,
+    (1, 2): 0,
+    (1, 3): 5,
+    (1, 4): 0,
+    (1, 5): -20,
+    (1, 6): -40,
+    (2, 0): -30,
+    (2, 1): 5,
+    (2, 2): 10,
+    (2, 3): 15,
+    (2, 4): 10,
+    (2, 5): 5,
+    (2, 6): -30,
+    (3, 0): -30,
+    (3, 1): 0,
+    (3, 2): 15,
+    (3, 3): 20,
+    (3, 4): 15,
+    (3, 5): 0,
+    (3, 6): -30,
+    (4, 0): -30,
+    (4, 1): 5,
+    (4, 2): 10,
+    (4, 3): 15,
+    (4, 4): 10,
+    (4, 5): 5,
+    (4, 6): -30,
+    (5, 0): -40,
+    (5, 1): -20,
+    (5, 2): 0,
+    (5, 3): 5,
+    (5, 4): 0,
+    (5, 5): -20,
+    (5, 6): -40,
+    (6, 0): -50,
+    (6, 1): -40,
+    (6, 2): -30,
+    (6, 3): -30,
+    (6, 4): -30,
+    (6, 5): -40,
+    (6, 6): -50
+}
+
+# avoid edges and corners
+BISHOP_SQUARE_TABLE = {
+    (0, 0): -20,
+    (0, 1): -20,
+    (0, 2): -20,
+    (0, 3): -20,
+    (0, 4): -20,
+    (0, 5): -20,
+    (0, 6): -20,
+    (1, 0): -10,
+    (1, 1): 0,
+    (1, 2): 0,
+    (1, 3): 0,
+    (1, 4): 0,
+    (1, 5): 0,
+    (1, 6): -10,
+    (2, 0): -10,
+    (2, 1): 0,
+    (2, 2): 10,
+    (2, 3): 15,
+    (2, 4): 10,
+    (2, 5): 0,
+    (2, 6): -10,
+    (3, 0): -10,
+    (3, 1): 10,
+    (3, 2): 10,
+    (3, 3): 20,
+    (3, 4): 10,
+    (3, 5): 10,
+    (3, 6): -10,
+    (4, 0): -10,
+    (4, 1): 5,
+    (4, 2): 10,
+    (4, 3): 15,
+    (4, 4): 10,
+    (4, 5): 5,
+    (4, 6): -10,
+    (5, 0): -10,
+    (5, 1): 0,
+    (5, 2): 0,
+    (5, 3): 0,
+    (5, 4): 0,
+    (5, 5): 0,
+    (5, 6): -10,
+    (6, 0): -20,
+    (6, 1): -20,
+    (6, 2): -20,
+    (6, 3): -20,
+    (6, 4): -20,
+    (6, 5): -20,
+    (6, 6): -20
+}
+
+#centralise
+ROOK_SQUARE_TABLE = {
+    (0, 0): 0,
+    (0, 1): 0,
+    (0, 2): 5,
+    (0, 3): 5,
+    (0, 4): 5,
+    (0, 5): 0,
+    (0, 6): 0,
+    (1, 0): -5,
+    (1, 1): 0,
+    (1, 2): 0,
+    (1, 3): 0,
+    (1, 4): 0,
+    (1, 5): 0,
+    (1, 6): -5,
+    (2, 0): -5,
+    (2, 1): 0,
+    (2, 2): 0,
+    (2, 3): 0,
+    (2, 4): 0,
+    (2, 5): 0,
+    (2, 6): -5,
+    (3, 0): -5,
+    (3, 1): 0,
+    (3, 2): 0,
+    (3, 3): 0,
+    (3, 4): 0,
+    (3, 5): 0,
+    (3, 6): -5,
+    (4, 0): -5,
+    (4, 1): 0,
+    (4, 2): 0,
+    (4, 3): 0,
+    (4, 4): 0,
+    (4, 5): 0,
+    (4, 6): -5,
+    (5, 0): 5,
+    (5, 1): 10,
+    (5, 2): 10,
+    (5, 3): 10,
+    (5, 4): 10,
+    (5, 5): 10,
+    (5, 6): 5,
+    (6, 0): 0,
+    (6, 1): 0,
+    (6, 2): 0,
+    (6, 3): 0,
+    (6, 4): 0,
+    (6, 5): 0,
+    (6, 6): 0
+}
+
+QUEEN_SQUARE_TABLE = {
+    (0, 0): -20,
+    (0, 1): -10,
+    (0, 2): -10,
+    (0, 3): -5,
+    (0, 4): -10,
+    (0, 5): -10,
+    (0, 6): -20,
+    (1, 0): -10,
+    (1, 1): 0,
+    (1, 2): 5,
+    (1, 3): 0,
+    (1, 4): 0,
+    (1, 5): 0,
+    (1, 6): -10,
+    (2, 0): -10,
+    (2, 1): 5,
+    (2, 2): 5,
+    (2, 3): 5,
+    (2, 4): 5,
+    (2, 5): 5,
+    (2, 6): -10,
+    (3, 0): 0,
+    (3, 1): 5,
+    (3, 2): 5,
+    (3, 3): 5,
+    (3, 4): 5,
+    (3, 5): 5,
+    (3, 6): 0,
+    (4, 0): -10,
+    (4, 1): 0,
+    (4, 2): 0,
+    (4, 3): 5,
+    (4, 4): 0,
+    (4, 5): 0,
+    (4, 6): -10,
+    (5, 0): -10,
+    (5, 1): 0,
+    (5, 2): 0,
+    (5, 3): 0,
+    (5, 4): 0,
+    (5, 5): 0,
+    (5, 6): -10,
+    (6, 0): -20,
+    (6, 1): -10,
+    (6, 2): -10,
+    (6, 3): -5,
+    (6, 4): -10,
+    (6, 5): -10,
+    (6, 6): -20
+}
+
+KING_SQUARE_TABLE = {
+    (0, 0): 20,
+    (0, 1): 30,
+    (0, 2): 10,
+    (0, 3): 0,
+    (0, 4): 10,
+    (0, 5): 30,
+    (0, 6): 20,
+    (1, 0): 20,
+    (1, 1): 20,
+    (1, 2): 0,
+    (1, 3): 0,
+    (1, 4): 0,
+    (1, 5): 20,
+    (1, 6): 20,
+    (2, 0): -10,
+    (2, 1): -20,
+    (2, 2): -20,
+    (2, 3): -20,
+    (2, 4): -20,
+    (2, 5): -20,
+    (2, 6): -10,
+    (3, 0): -20,
+    (3, 1): -30,
+    (3, 2): -30,
+    (3, 3): -40,
+    (3, 4): -30,
+    (3, 5): -30,
+    (3, 6): -20,
+    (4, 0): -30,
+    (4, 1): -40,
+    (4, 2): -40,
+    (4, 3): -50,
+    (4, 4): -40,
+    (4, 5): -40,
+    (4, 6): -30,
+    (5, 0): -30,
+    (5, 1): -40,
+    (5, 2): -40,
+    (5, 3): -50,
+    (5, 4): -40,
+    (5, 5): -40,
+    (5, 6): -30,
+    (6, 0): -30,
+    (6, 1): -40,
+    (6, 2): -40,
+    (6, 3): -50,
+    (6, 4): -40,
+    (6, 5): -40,
+    (6, 6): -30
+}
+
 # https://www.chessprogramming.org/Point_Value#Basic_values
 PIECE_MATERIALS = {
     "Pawn": 100,
@@ -178,13 +493,6 @@ class Piece:
             moves_straight.update(moves_knight)
             return moves_straight
 
-# def flatten(S):
-#     if S == []:
-#         return S
-#     if isinstance(S[0], list):
-#         return flatten(S[0]) + flatten(S[1:])
-#     return S[:1] + flatten(S[1:])
-
 #############################################################################
 ######## Board
 #############################################################################
@@ -235,6 +543,33 @@ class State:
                 black_pieces[pos] = piece_obj
         return State(white_pieces, black_pieces, is_white_turn, 0)
     
+    def get_piece_square_score_helper(self, is_white: bool) -> int:
+        total_score = 0
+        dict_to_get = self.white_pieces if is_white else self.black_pieces        
+        for pos, piece in dict_to_get.items():
+            if (piece.name == "Pawn"):
+                total_score += PAWN_SQUARE_TABLE[pos]
+            if (piece.name == "Bishop"):
+                total_score += BISHOP_SQUARE_TABLE[pos]
+            if (piece.name == "Knight"):
+                total_score += KNIGHT_SQUARE_TABLE[pos]
+            if (piece.name == "Queen"):
+                total_score += QUEEN_SQUARE_TABLE[pos]
+            if (piece.name == "King"):
+                total_score += KING_SQUARE_TABLE[pos]
+            if (piece.name == "Empress"):
+                total_score += QUEEN_SQUARE_TABLE[pos]
+            if (piece.name == "Princess"):
+                total_score += QUEEN_SQUARE_TABLE[pos]
+            if (piece.name == "Rook"):
+                total_score += ROOK_SQUARE_TABLE[pos]
+            if (piece.name == "Ferz"):
+                total_score += PAWN_SQUARE_TABLE[pos]
+        return total_score
+    
+    def get_piece_square_score(self) -> int:
+        return self.get_piece_square_score_helper(self, True) - self.get_piece_square_score_helper(self, False) 
+
     def get_material_score(self):
         white_value = 0
         black_value = 0
@@ -268,7 +603,7 @@ class Game:
 
     @staticmethod
     def evaluate(curr_state: State) -> int:
-        return curr_state.get_material_score() 
+        return curr_state.get_material_score() + curr_state.get_material_score()
     
     @staticmethod
     def is_draw(curr_state: State) -> bool:
@@ -303,7 +638,7 @@ class Game:
         for pos, piece in enemy_team_pieces.items():
             possible_moves = piece.get_valid_moves(curr_state.grid, pos)
             enemy_possible_moves.add((pos))
-            for move in enemy_possible_moves:
+            for move in possible_moves:
                 enemy_possible_moves.add((move))
 
         if (opponent_king_position in enemy_possible_moves):
