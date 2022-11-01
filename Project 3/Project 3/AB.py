@@ -503,7 +503,7 @@ def to_grid_coord(chess_pos):
     return (chess_pos[1], ord(chess_pos[0]) - 97)
 
 def has_king(pieces) -> bool:
-    for piece in pieces.values():
+    for piece in set(pieces.values()):
         if piece.name == "King": 
             return True
     return False
@@ -579,13 +579,13 @@ class State:
             black_value += PIECE_MATERIALS[black_piece.name]    
         return white_value - black_value
 
-    def get_opponent_king_pos(self, is_white_turn):
+    def get_playing_turn_king_pos(self, is_white_turn):
         if (is_white_turn):
-            for pos, piece in self.black_pieces.items():
+            for pos, piece in self.white_pieces.items():
                 if (piece.name == "King"):
                     return pos
         else:
-            for pos, piece in self.white_pieces.items():
+            for pos, piece in self.black_pieces.items():
                 if (piece.name == "King"):
                     return pos
         return None
@@ -609,16 +609,8 @@ class Game:
     def is_draw(curr_state: State) -> bool:
         black_count = len(curr_state.black_pieces)
         white_count = len(curr_state.white_pieces)
-        is_black_king_alive = False
-        is_white_king_alive = False
-        for piece in curr_state.black_pieces.values():
-            if (piece.name == "King"):
-                is_black_king_alive = True
-                break
-        for piece in curr_state.white_pieces.values():
-            if (piece.name == "King"):
-                is_white_king_alive = True
-                break
+        is_black_king_alive = has_king(curr_state.black_pieces)
+        is_white_king_alive = has_king(curr_state.white_pieces)
         return black_count == white_count and is_black_king_alive and is_white_king_alive and curr_state.move_count >= 50
     
     @staticmethod
@@ -629,9 +621,9 @@ class Game:
         else:
             enemy_team_pieces = curr_state.white_pieces
         # any pieces in the current team is threatening the opponent king
-        opponent_king_position = curr_state.get_opponent_king_pos(is_white_turn)
+        playing_king_pos = curr_state.get_playing_turn_king_pos(is_white_turn)
         
-        # assert opponent_king_position is not None
+        assert playing_king_pos is not None
 
         # get all the enemy possible moves, if they contains king position -> checked
         enemy_possible_moves = set()
@@ -641,14 +633,14 @@ class Game:
             for move in possible_moves:
                 enemy_possible_moves.add((move))
 
-        if (opponent_king_position in enemy_possible_moves):
+        if (playing_king_pos in enemy_possible_moves):
             return True
         
         return False
 
     @staticmethod
     def is_endgame(curr_state: State, is_white_turn: bool) -> bool:
-        return Game.is_standard_checkmate(curr_state, is_white_turn)
+        return Game.is_standard_checkmate(curr_state, is_white_turn) or Game.is_draw(curr_state)
 
 # get the all the moves that generate the next state, along with the next state
 def get_next_states(curr_state: State, is_white_turn: bool):
