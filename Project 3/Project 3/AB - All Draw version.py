@@ -793,39 +793,39 @@ def studentAgent(gameboard):
         return pos1, pos2 #Format to be returned (('a', 0), ('b', 3))
     return None
 
-def main():
-    startBoard = {
-        ('d', 6): ('King', 'Black'),
-        ('c', 6): ('Queen', 'Black'),
-        ('b', 6): ('Bishop', 'Black'),
-        ('a', 6): ('Knight', 'Black'),
-        ('g', 6): ('Rook', 'Black'),
-        ('e', 6): ('Princess', 'Black'),
-        ('f', 6): ('Empress', 'Black'),
-        ('b', 5): ('Pawn', 'Black'),
-        ('c', 5): ('Pawn', 'Black'),
-        ('d', 5): ('Pawn', 'Black'),
-        ('e', 5): ('Pawn', 'Black'),
-        ('f', 5): ('Pawn', 'Black'),
-        ('a', 5): ('Ferz', 'Black'),
-        ('g', 5): ('Ferz', 'Black'),        
+# def main():
+#     startBoard = {
+#         ('d', 6): ('King', 'Black'),
+#         ('c', 6): ('Queen', 'Black'),
+#         ('b', 6): ('Bishop', 'Black'),
+#         ('a', 6): ('Knight', 'Black'),
+#         ('g', 6): ('Rook', 'Black'),
+#         ('e', 6): ('Princess', 'Black'),
+#         ('f', 6): ('Empress', 'Black'),
+#         ('b', 5): ('Pawn', 'Black'),
+#         ('c', 5): ('Pawn', 'Black'),
+#         ('d', 5): ('Pawn', 'Black'),
+#         ('e', 5): ('Pawn', 'Black'),
+#         ('f', 5): ('Pawn', 'Black'),
+#         ('a', 5): ('Ferz', 'Black'),
+#         ('g', 5): ('Ferz', 'Black'),        
         
-        ('d', 0): ('King', 'White'),
-        ('c', 0): ('Queen', 'White'),
-        ('b', 0): ('Bishop', 'White'),
-        ('a', 0): ('Knight', 'White'),
-        ('g', 0): ('Rook', 'White'),
-        ('e', 0): ('Princess', 'White'),
-        ('f', 0): ('Empress', 'White'),
-        ('b', 1): ('Pawn', 'White'),
-        ('c', 1): ('Pawn', 'White'),
-        ('d', 1): ('Pawn', 'White'),
-        ('e', 1): ('Pawn', 'White'),
-        ('f', 1): ('Pawn', 'White'),
-        ('a', 1): ('Ferz', 'White'),
-        ('g', 1): ('Ferz', 'White')}
-    # print(studentAgent(startBoard))
+#         ('d', 0): ('King', 'White'),
+#         ('c', 0): ('Queen', 'White'),
+#         ('b', 0): ('Bishop', 'White'),
+#         ('a', 0): ('Knight', 'White'),
+#         ('g', 0): ('Rook', 'White'),
+#         ('e', 0): ('Princess', 'White'),
+#         ('f', 0): ('Empress', 'White'),
+#         ('b', 1): ('Pawn', 'White'),
+#         ('c', 1): ('Pawn', 'White'),
+#         ('d', 1): ('Pawn', 'White'),
+#         ('e', 1): ('Pawn', 'White'),
+#         ('f', 1): ('Pawn', 'White'),
+#         ('a', 1): ('Ferz', 'White'),
+#         ('g', 1): ('Ferz', 'White')}
+#     print(studentAgent(startBoard))
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
